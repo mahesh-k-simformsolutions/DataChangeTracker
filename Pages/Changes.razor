@@ -1,0 +1,83 @@
+﻿@page "/changes"
+@using DataChangeTracker.Data.Models.Tracking;
+@using DataChangeTracker.Service;
+@inject AuditService Service
+<RadzenStack Orientation=Orientation.Horizontal JustifyContent="JustifyContent.SpaceBetween">
+    <RadzenDropDown @bind-Value=entityname Data=@entityList Multiple=false AllowClear=true
+                    AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    SelectedItemsText="selected" Placeholder="Select table name" FilterPlaceholder="Select table name" Style="width: 75%;" Change="(x)=>{ OnNameChange(x);}" />
+    <RadzenDropDown @bind-Value=entityId Data=@entityIdList Multiple=false AllowClear=true
+                    AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    SelectedItemsText="selected" Placeholder="select Id of record" FilterPlaceholder="select Id of record" Style="width: 75%;" Change="(x)=>{ OnIdChange(x);}" />
+</RadzenStack>
+@if (data == null || data.Count == 0)
+{
+
+}
+else
+{
+    <br />
+    <table class="col-md-12">
+        @foreach (var item in data)
+        {
+            <tr>
+                <td colspan="6">
+                    <p>@item.ChangeDate?.ToString("dd MMM yyyy hh:mm:ss tt ")</p>
+                    <p>Operation: @item.Operation</p>
+                    <p>By: @item.ChangedBy.Name</p>
+                    <table>
+                        <tr>
+                            <th style="border: 1px solid #dddddd;text-align: left;padding:8px;">Field Name</th>
+                            <th style="border: 1px solid #dddddd;text-align: left;padding:8px;">Old Value</th>
+                            <th style="border: 1px solid #dddddd;text-align: left;padding:8px;">New Value</th>
+                        </tr>
+                        @foreach (var c in item.Changes)
+                        {
+                            <tr>
+                                <td style="border: 1px solid #dddddd;text-align: left;padding:8px;">@c.FieldName</td>
+                                <td style="border: 1px solid #dddddd;text-align: left;padding:8px;">@c.OldValue</td>
+                                <td style="border: 1px solid #dddddd;text-align: left;padding:8px;">@c.NewValue</td>
+                            </tr>
+                        }
+                    </table>
+                </td>
+            </tr>
+            <hr />
+        }
+    </table>
+}
+@code {
+    List<Audit> data;
+    List<string> entityList = new List<string> { "Products", "Categories" };
+    List<int> entityIdList = new List<int>();
+    string entityname = string.Empty;
+    int entityId;
+
+    public async Task OnNameChange(object obj)
+    {
+        if (obj != null)
+        {
+            entityIdList = await Service.GetIdList(obj.ToString()); 
+            StateHasChanged();
+        }
+        else
+        {
+            entityIdList?.Clear();
+            data?.Clear();
+            entityId = 0;
+        }
+        StateHasChanged();
+    }
+    public async Task OnIdChange(object id)
+    {
+        if (id != null)
+        {
+            data = await Service.GetAuditsAsync(entityname, entityId);
+        }
+        else
+        {
+            data?.Clear();
+        }
+        StateHasChanged();
+    }
+}

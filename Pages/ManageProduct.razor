@@ -1,0 +1,100 @@
+﻿@page "/product/{productId:int}"
+
+<PageTitle>@PageTitle</PageTitle>
+
+@using DataChangeTracker.Data.Models;
+@using System.Security.Principal
+@using DataChangeTracker.Service;
+@using Microsoft.AspNetCore.Identity;
+
+@inject ProductService Service
+@inject CategoryService CategoryService
+@inject NavigationManager UriHelper
+@inject AuthenticationStateProvider AuthProvider
+
+@if (product == null)
+{
+
+}
+else
+{
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12 p-2">
+                    <EditForm EditContext="EditContext" OnValidSubmit="@(async (args)=> { await Save(); })">
+                        <DataAnnotationsValidator />
+                        <RadzenStack>
+                            <RadzenStack Orientation=Orientation.Horizontal>
+                                <RadzenFormField Text="Name" Style="width:85%">
+                                    <ChildContent>
+                                    <RadzenTextBox Name="Name" Style="width: 100%;" @bind-Value=product.Name />
+                                    </ChildContent>
+                                <Helper><ValidationMessage For="@(() =>product.Name )" /></Helper>
+                                </RadzenFormField>
+                            <RadzenFormField Text="Description" Style="width:85%">
+                                    <ChildContent>
+                                        <RadzenTextBox Name="Description" Style="width: 100%;" @bind-Value=product.Description />
+                                    </ChildContent>
+                                <Helper><ValidationMessage For="@(() =>product.Description )" /></Helper>
+                                </RadzenFormField>
+                            <RadzenFormField Text="Price" Style="width:85%">
+                                    <ChildContent>
+                                    <RadzenNumeric Name="Price" Style="width: 100%;" @bind-Value=product.Price />
+                                    </ChildContent>
+                                <Helper><ValidationMessage For="@(() =>product.Price )" /></Helper>
+                                </RadzenFormField>
+                            </RadzenStack>
+                            <RadzenStack Orientation=Orientation.Horizontal>
+                            <RadzenDropDown @bind-Value=@product.CategoryId Data=@categories TextProperty="Name" ValueProperty="Id" Multiple=false AllowClear=true Placeholder="Select category"
+                                        AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                        SelectedItemsText="selected" Style="width: 75%;" />
+                            </RadzenStack>
+                            <div class="col-md-12 p-2 mb-5 text-center">
+                                <RadzenButton ButtonType="ButtonType.Submit" Disabled="!EditContext.Validate()" Text="Save" />
+                            </div>
+                        </RadzenStack>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+}
+@code {
+
+    [Parameter]
+    public int productId { get; set; }
+    EditContext? EditContext;
+    Product product;
+    List<Category> categories;
+    string PageTitle { get => (EditContext != null && EditContext.IsModified() ? "**" : "") + (productId == 0 ? "Add" : "Edit") + " Product - " + product?.Name; }
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (productId == 0)
+            {
+                this.product = new Product();
+            }
+            else
+            {
+                this.product = await Service.GetById(productId);
+            }
+            EditContext = new EditContext(product);
+            categories = await CategoryService.GetAll();
+        }
+        catch (Exception ex)
+        {
+        }
+    }
+
+    private async Task Save()
+    {
+        try
+        {
+            await Service.Save(product);
+            UriHelper.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+        }
+    }
+}

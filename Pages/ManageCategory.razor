@@ -1,0 +1,80 @@
+﻿@page "/category/{categoryId:int}"
+
+<PageTitle>@PageTitle</PageTitle>
+
+@using DataChangeTracker.Data.Models;
+@using System.Security.Principal
+@using DataChangeTracker.Service;
+@using Microsoft.AspNetCore.Identity;
+
+@inject CategoryService Service
+@inject NavigationManager UriHelper
+@inject AuthenticationStateProvider AuthProvider
+
+@if (category == null)
+{
+
+}
+else
+{
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12 p-2">
+                <EditForm EditContext="EditContext" OnValidSubmit="@(async (args)=> { await Save(); })">
+                    <DataAnnotationsValidator />
+                    <RadzenStack>
+                        <RadzenStack Orientation=Orientation.Horizontal>
+                            <RadzenFormField Text="Name" Style="width:85%">
+                                <ChildContent>
+                                    <RadzenTextBox Name="Name" Style="width: 100%;" @bind-Value=category.Name />
+                                </ChildContent>
+                                <Helper><ValidationMessage For="@(() =>category.Name )" /></Helper>
+                            </RadzenFormField>
+                        </RadzenStack>
+                        <div class="col-md-12 p-2 mb-5 text-center">
+                            <RadzenButton ButtonType="ButtonType.Submit" Disabled="!EditContext.Validate()" Text="Save" />
+                        </div>
+                    </RadzenStack>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+@code {
+
+    [Parameter]
+    public int categoryId { get; set; }
+    EditContext? EditContext;
+    Category category;
+    string PageTitle { get => (EditContext != null && EditContext.IsModified() ? "**" : "") + (categoryId == 0 ? "Add" : "Edit") + " Product - " + category?.Name; }
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (categoryId == 0)
+            {
+                this.category = new Category();
+            }
+            else
+            {
+                this.category = await Service.GetById(categoryId);
+            }
+            EditContext = new EditContext(category);
+        }
+        catch (Exception ex)
+        {
+        }
+    }
+
+    private async Task Save()
+    {
+        try
+        {
+            await Service.Save(category);
+            UriHelper.NavigateTo("/categories");
+        }
+        catch (Exception ex)
+        {
+        }
+    }
+}

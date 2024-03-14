@@ -1,0 +1,46 @@
+﻿@page "/categories"
+@using DataChangeTracker.Data.Models;
+@using DataChangeTracker.Service;
+@using Microsoft.AspNetCore.Http.Extensions;
+@inject CategoryService Service
+@inject NavigationManager UriHelper
+@inject AuthenticationStateProvider AuthProvider
+@inject DialogService DialogService
+<PageTitle>Categories</PageTitle>
+<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+    <RadzenText TextStyle="TextStyle.DisplayH4" Text="Categories" />
+    <RadzenButton ButtonStyle="ButtonStyle.Primary" Icon="add" Text="Add" Click="@(args => UriHelper.NavigateTo("category/0"))" Size="ButtonSize.ExtraSmall" />
+</RadzenStack>
+<RadzenDataGrid IsLoading="@(categories == null)" @ref="grid" AllowColumnResize="true" AllowColumnReorder="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                AllowPaging="true" PageSize="8" AllowSorting="false" Data="@categories" TItem="Category" ShowCellDataAsTooltip="true">
+    <Columns>
+        <RadzenDataGridColumn Width="23%" TItem="Category" Title="Id" Property="Id" />
+        <RadzenDataGridColumn Width="23%" TItem="Category" Title="Name" Property="Name" />
+        <RadzenDataGridColumn TItem="Category" Title="Action" Width="8%">
+            <Template Context="data">
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Click=@(args => UriHelper.NavigateTo("category/" + @data.Id))
+                              title="Edit" Size="ButtonSize.ExtraSmall" Icon="edit" Variant="Variant.Text" />
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Click=@(args => Delete(@data.Id))
+                              title="Delete" Size="ButtonSize.ExtraSmall" Icon="delete" Variant="Variant.Text" />
+
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+@code {
+    RadzenDataGrid<Category>? grid;
+    private List<Category> categories;
+    protected override async Task OnInitializedAsync()
+    {
+        await Refresh();
+    }
+    private async Task Delete(int id)
+    {
+        await Service.Delete(id);
+        await Refresh();
+    }
+    private async Task Refresh()
+    {
+        categories = await Service.GetAll();
+    }
+}

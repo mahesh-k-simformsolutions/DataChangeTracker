@@ -1,0 +1,53 @@
+﻿@page "/"
+@using DataChangeTracker.Data.Models;
+@using DataChangeTracker.Service;
+@using Microsoft.AspNetCore.Http.Extensions;
+@inject ProductService Service
+@inject NavigationManager UriHelper
+@inject AuthenticationStateProvider AuthProvider
+@inject DialogService DialogService
+<PageTitle>Index</PageTitle>
+<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+    <RadzenText TextStyle="TextStyle.DisplayH4" Text="Products" />
+    <RadzenButton ButtonStyle="ButtonStyle.Primary" Icon="add" Text="Add" Click="@(args => UriHelper.NavigateTo("product/0"))" Size="ButtonSize.ExtraSmall" />
+</RadzenStack>
+<RadzenDataGrid IsLoading="@(products == null)" @ref="grid" AllowColumnResize="true" AllowColumnReorder="true" FilterPopupRenderMode="PopupRenderMode.OnDemand"
+                AllowPaging="true" PageSize="8" AllowSorting="false" Data="@products" TItem="Product" ShowCellDataAsTooltip="true">
+    <Columns>
+        <RadzenDataGridColumn Width="23%" TItem="Product" Title="Id" Property="Id" />
+        <RadzenDataGridColumn Width="23%" TItem="Product" Title="Name" Property="Name" />
+        <RadzenDataGridColumn Width="23%" TItem="Product" Title="Description" Property="Description" />
+        <RadzenDataGridColumn Width="23%" TItem="Product" Title="Price" Property="Price" />
+        <RadzenDataGridColumn Width="10%" TItem="Product" Title="Category">
+            <Template Context="data">
+                <RadzenText Text="@data.Category.Name" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Product" Title="Action" Width="8%">
+            <Template Context="data">
+                <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Primary" Click=@(args => UriHelper.NavigateTo("product/" + @data.Id))
+                                  title="Edit" Size="ButtonSize.ExtraSmall" Icon="edit" Variant="Variant.Text" />
+                    <RadzenButton ButtonType="ButtonType.Button" ButtonStyle="ButtonStyle.Danger" Click=@(args => Delete(@data.Id))
+                                  title="Delete" Size="ButtonSize.ExtraSmall" Icon="delete" Variant="Variant.Text" />
+
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+@code{
+    RadzenDataGrid<Product>? grid;
+    private List<Product> products;
+    protected override async Task OnInitializedAsync()
+    {
+        await Refresh();
+    }
+    private async Task Delete(int id)
+    {
+            await Service.Delete(id);
+            await Refresh();
+    }
+    private async Task Refresh()
+    {
+        products = await Service.GetAll();
+    }
+}
